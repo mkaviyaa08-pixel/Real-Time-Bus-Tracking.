@@ -8,14 +8,21 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
     <style>
         body { margin: 0; background-color: #0b0e14; color: white; font-family: sans-serif; overflow: hidden; }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
         #map, #login-bg-map { height: 100%; width: 100%; z-index: 1; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        /* Hide the routing instructions panel to keep the UI clean */
+        .leaflet-routing-container { display: none; }
     </style>
 </head>
 <body>
@@ -37,7 +44,6 @@
 
             useEffect(() => {
                 if (!bgMapRef.current) {
-                    // Initialize background map for login
                     const map = L.map('login-bg-map', {
                         zoomControl: false,
                         attributionControl: false,
@@ -46,13 +52,11 @@
                         doubleClickZoom: false
                     }).setView([12.0, 78.5], 7);
 
-                    // Dark theme tiles for a high-tech look
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-                    // Sample Route: Chennai to Coimbatore
                     const route = [districts["Chennai"], districts["Coimbatore"]];
                     L.polyline(route, {
-                        color: '#22d3ee', // Cyan tracking line
+                        color: '#22d3ee',
                         weight: 3,
                         opacity: 0.5,
                         dashArray: '5, 10'
@@ -64,11 +68,9 @@
 
             return (
                 <div className="h-screen w-full flex items-center justify-center relative">
-                    {/* Map Background */}
                     <div id="login-bg-map" className="absolute inset-0 z-0"></div>
                     <div className="absolute inset-0 bg-slate-900/60 z-1"></div>
 
-                    {/* Login Card */}
                     <div className="bg-[#051c1c]/90 p-10 rounded-lg shadow-2xl w-96 border border-cyan-900/50 z-10 backdrop-blur-md">
                         <h2 className="text-center text-white font-bold mb-8 tracking-widest">USER LOGIN</h2>
                         <input type="text" placeholder="Username" className="w-full p-3 mb-4 rounded-full bg-slate-800 text-white outline-none border border-transparent focus:border-cyan-500" />
@@ -135,20 +137,27 @@
                             attribution: '&copy; OpenStreetMap contributors'
                         }).addTo(map);
 
-                        const routePoints = [startCoords, endCoords];
-                        const polyline = L.polyline(routePoints, {
-                            color: '#f97316',
-                            weight: 5,
-                            opacity: 0.8,
-                            dashArray: '10, 10',
-                            lineCap: 'round'
+                        // Real-world road routing
+                        L.Routing.control({
+                            waypoints: [
+                                L.latLng(startCoords[0], startCoords[1]),
+                                L.latLng(endCoords[0], endCoords[1])
+                            ],
+                            lineOptions: {
+                                styles: [{ color: '#f97316', opacity: 0.8, weight: 6 }]
+                            },
+                            createMarker: function(i, wp, nWps) {
+                                if (i === 0) return L.circleMarker(wp.latLng, { color: '#22c55e', radius: 8, fillOpacity: 1 }).bindPopup("Start: " + from);
+                                if (i === nWps - 1) return L.circleMarker(wp.latLng, { color: '#f97316', radius: 8, fillOpacity: 1 }).bindPopup("Destination: " + to);
+                                return null;
+                            },
+                            addWaypoints: false,
+                            draggableWaypoints: false,
+                            fitSelectedRoutes: true,
+                            show: false
                         }).addTo(map);
 
-                        map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
-
-                        L.circleMarker(startCoords, { color: '#22c55e', radius: 8, fillOpacity: 1 }).addTo(map).bindPopup("Starting Point");
-                        L.circleMarker(endCoords, { color: '#f97316', radius: 8, fillOpacity: 1 }).addTo(map).bindPopup("Destination");
-
+                        // Bus Marker
                         L.marker(startCoords, {
                             icon: L.divIcon({ html: '🚌', className: 'text-2xl', iconSize: [30, 30] })
                         }).addTo(map);
@@ -187,11 +196,11 @@
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">Total Distance</p>
-                                <p className="text-lg font-bold">428 km</p>
+                                <p className="text-lg font-bold">Calculated...</p>
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">ETA</p>
-                                <p className="text-lg font-bold text-orange-400">75 min 8s</p>
+                                <p className="text-lg font-bold text-orange-400">Live</p>
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">Progress</p>
