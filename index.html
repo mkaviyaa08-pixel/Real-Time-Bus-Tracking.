@@ -13,7 +13,7 @@
     <style>
         body { margin: 0; background-color: #0b0e14; color: white; font-family: sans-serif; overflow: hidden; }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
-        #map { height: 100%; width: 100%; z-index: 1; }
+        #map, #login-bg-map { height: 100%; width: 100%; z-index: 1; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -32,28 +32,52 @@
             "Trichy": [10.7905, 78.7047]
         };
 
-        // Calculation: Earth distance between two lat/lng points
-        const getDistanceKM = (coords1, coords2) => {
-            const [lat1, lon1] = coords1;
-            const [lat2, lon2] = coords2;
-            const R = 6371; // km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-        };
+        const LoginScreen = ({ onLogin }) => {
+            const bgMapRef = useRef(null);
 
-        const LoginScreen = ({ onLogin }) => (
-            <div className="h-screen w-full flex items-center justify-center bg-slate-900">
-                <div className="bg-[#051c1c] p-10 rounded-lg shadow-2xl w-96 border border-slate-700">
-                    <h2 className="text-center text-white font-bold mb-8 tracking-widest">USER LOGIN</h2>
-                    <input type="text" placeholder="Username" className="w-full p-3 mb-4 rounded-full bg-slate-700 text-white outline-none border border-transparent focus:border-cyan-500" />
-                    <input type="password" placeholder="Password" className="w-full p-3 mb-8 rounded-full bg-slate-700 text-white outline-none border border-transparent focus:border-cyan-500" />
-                    <button onClick={onLogin} className="w-full bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition">LOGIN</button>
+            useEffect(() => {
+                if (!bgMapRef.current) {
+                    // Initialize background map for login
+                    const map = L.map('login-bg-map', {
+                        zoomControl: false,
+                        attributionControl: false,
+                        dragging: false,
+                        scrollWheelZoom: false,
+                        doubleClickZoom: false
+                    }).setView([12.0, 78.5], 7);
+
+                    // Dark theme tiles for a high-tech look
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+                    // Sample Route: Chennai to Coimbatore
+                    const route = [districts["Chennai"], districts["Coimbatore"]];
+                    L.polyline(route, {
+                        color: '#22d3ee', // Cyan tracking line
+                        weight: 3,
+                        opacity: 0.5,
+                        dashArray: '5, 10'
+                    }).addTo(map);
+
+                    bgMapRef.current = map;
+                }
+            }, []);
+
+            return (
+                <div className="h-screen w-full flex items-center justify-center relative">
+                    {/* Map Background */}
+                    <div id="login-bg-map" className="absolute inset-0 z-0"></div>
+                    <div className="absolute inset-0 bg-slate-900/60 z-1"></div>
+
+                    {/* Login Card */}
+                    <div className="bg-[#051c1c]/90 p-10 rounded-lg shadow-2xl w-96 border border-cyan-900/50 z-10 backdrop-blur-md">
+                        <h2 className="text-center text-white font-bold mb-8 tracking-widest">USER LOGIN</h2>
+                        <input type="text" placeholder="Username" className="w-full p-3 mb-4 rounded-full bg-slate-800 text-white outline-none border border-transparent focus:border-cyan-500" />
+                        <input type="password" placeholder="Password" className="w-full p-3 mb-8 rounded-full bg-slate-800 text-white outline-none border border-transparent focus:border-cyan-500" />
+                        <button onClick={onLogin} className="w-full bg-cyan-500 text-black font-bold py-3 rounded-full hover:bg-cyan-400 transition shadow-[0_0_15px_rgba(6,182,212,0.4)]">LOGIN</button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const SearchScreen = ({ onSearch }) => {
             const [from, setFrom] = useState("Coimbatore");
@@ -98,43 +122,34 @@
 
         const MapScreen = ({ from, to, onBack }) => {
             const mapRef = useRef(null);
-            const busMarkerRef = useRef(null);
-            const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
-            const [progress, setProgress] = useState(0);
-
-            const startCoords = districts[from];
-            const endCoords = districts[to];
-            const totalDist = getDistanceKM(startCoords, endCoords);
 
             useEffect(() => {
-                // 1. Clock Update
-                const clockInterval = setInterval(() => {
-                    setCurrentTime(new Date().toLocaleTimeString());
-                }, 1000);
-
-                // 2. Initialize Map & Route
                 const timer = setTimeout(() => {
                     if (!mapRef.current) {
+                        const startCoords = districts[from];
+                        const endCoords = districts[to];
+                        
                         const map = L.map('map').setView(startCoords, 7);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; OSM'
+                        
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
                         }).addTo(map);
 
-                        // Draw dashed line for route
-                        const routeLine = L.polyline([startCoords, endCoords], {
+                        const routePoints = [startCoords, endCoords];
+                        const polyline = L.polyline(routePoints, {
                             color: '#f97316',
-                            weight: 4,
-                            dashArray: '10, 10'
+                            weight: 5,
+                            opacity: 0.8,
+                            dashArray: '10, 10',
+                            lineCap: 'round'
                         }).addTo(map);
 
-                        map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                        map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
 
-                        // Start/End visuals
-                        L.circleMarker(startCoords, { color: '#22c55e', radius: 6 }).addTo(map);
-                        L.circleMarker(endCoords, { color: '#ef4444', radius: 6 }).addTo(map);
+                        L.circleMarker(startCoords, { color: '#22c55e', radius: 8, fillOpacity: 1 }).addTo(map).bindPopup("Starting Point");
+                        L.circleMarker(endCoords, { color: '#f97316', radius: 8, fillOpacity: 1 }).addTo(map).bindPopup("Destination");
 
-                        // Bus Marker
-                        busMarkerRef.current = L.marker(startCoords, {
+                        L.marker(startCoords, {
                             icon: L.divIcon({ html: '🚌', className: 'text-2xl', iconSize: [30, 30] })
                         }).addTo(map);
 
@@ -142,38 +157,18 @@
                     }
                 }, 100);
 
-                // 3. Move Bus Simulation
-                const simInterval = setInterval(() => {
-                    setProgress(prev => {
-                        if (prev >= 100) return 100;
-                        const nextProgress = prev + 0.1;
-                        
-                        // Move bus marker visually
-                        if (busMarkerRef.current) {
-                            const currentLat = startCoords[0] + (endCoords[0] - startCoords[0]) * (nextProgress / 100);
-                            const currentLng = startCoords[1] + (endCoords[1] - startCoords[1]) * (nextProgress / 100);
-                            busMarkerRef.current.setLatLng([currentLat, currentLng]);
-                        }
-                        return nextProgress;
-                    });
-                }, 100);
-
                 return () => {
-                    clearInterval(clockInterval);
-                    clearInterval(simInterval);
                     clearTimeout(timer);
-                    if (mapRef.current) mapRef.current.remove();
+                    if (mapRef.current) {
+                        mapRef.current.remove();
+                        mapRef.current = null;
+                    }
                 };
             }, [from, to]);
 
-            // ETA and Remaining logic
-            const remainingDist = (totalDist * (1 - progress / 100)).toFixed(1);
-            const etaMinutes = Math.round(remainingDist * 1.5); // Simulating 40km/h avg speed
-
             return (
                 <div className="h-screen w-full flex overflow-hidden">
-                    {/* LEFT SIDE: DATA PANEL */}
-                    <div className="w-1/3 bg-[#111318] border-r border-white/10 flex flex-col p-6 custom-scrollbar overflow-y-auto z-10">
+                    <div className="w-1/3 bg-[#111318] border-r border-white/10 flex flex-col p-6 custom-scrollbar overflow-y-auto">
                         <button onClick={onBack} className="text-gray-400 hover:text-white mb-6 flex items-center gap-2">← Change Route</button>
                         
                         <div className="mb-8">
@@ -188,45 +183,32 @@
                         <div className="grid grid-cols-2 gap-4 mb-8">
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">Current Time</p>
-                                <p className="text-lg font-bold">{currentTime}</p>
+                                <p className="text-lg font-bold">21:20:13</p>
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">Total Distance</p>
-                                <p className="text-lg font-bold">{totalDist} km</p>
+                                <p className="text-lg font-bold">428 km</p>
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">ETA</p>
-                                <p className="text-lg font-bold text-orange-400">{etaMinutes} mins</p>
+                                <p className="text-lg font-bold text-orange-400">75 min 8s</p>
                             </div>
                             <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase">Progress</p>
-                                <p className="text-lg font-bold text-green-400">{Math.floor(progress)}%</p>
+                                <p className="text-lg font-bold text-green-400">39%</p>
                             </div>
                         </div>
 
                         <div className="flex-1">
                             <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Upcoming Stops</h2>
                             <div className="space-y-4 relative ml-2 border-l border-slate-700 pl-6">
-                                <div className={`relative ${progress > 25 ? 'opacity-30' : ''}`}>
-                                    <div className={`absolute -left-[29px] top-1 w-3 h-3 rounded-full ${progress > 25 ? 'bg-gray-500' : 'bg-blue-500 animate-pulse'}`}></div>
-                                    <p className="text-sm font-bold">Inter-District Checkpoint</p>
-                                    <p className="text-xs text-gray-500">{(totalDist * 0.25).toFixed(0)} km from start</p>
-                                </div>
-                                <div className={`relative ${progress > 60 ? 'opacity-30' : ''}`}>
-                                    <div className={`absolute -left-[29px] top-1 w-3 h-3 rounded-full ${progress > 60 ? 'bg-gray-500' : 'bg-blue-500'}`}></div>
-                                    <p className="text-sm font-bold">Highway Transit Plaza</p>
-                                    <p className="text-xs text-gray-500">{(totalDist * 0.6).toFixed(0)} km from start</p>
-                                </div>
-                                <div className="relative">
-                                    <div className="absolute -left-[29px] top-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                                    <p className="text-sm font-bold">Final Destination: {to}</p>
-                                    <p className="text-xs text-gray-500">Remaining: {remainingDist} km</p>
-                                </div>
+                                <div className="relative"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-blue-500 rounded-full"></div><p className="text-sm font-bold">Stop 1 - Intermediate</p><p className="text-xs text-gray-500">Scheduled: 21:45</p></div>
+                                <div className="relative"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-blue-500 rounded-full"></div><p className="text-sm font-bold">Stop 2 - Plaza</p><p className="text-xs text-gray-500">Scheduled: 22:15</p></div>
+                                <div className="relative opacity-50"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-gray-500 rounded-full"></div><p className="text-sm font-bold">Final - {to}</p></div>
                             </div>
                         </div>
                     </div>
 
-                    {/* RIGHT SIDE: MAP */}
                     <div className="w-2/3 relative">
                         <div id="map"></div>
                         <div className="absolute top-4 right-4 z-[1000] flex gap-2">
