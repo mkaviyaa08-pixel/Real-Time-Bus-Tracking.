@@ -10,10 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
     <style>
         body { margin: 0; background-color: #0b0e14; color: white; font-family: sans-serif; overflow: hidden; }
@@ -21,8 +18,6 @@
         #map, #login-bg-map { height: 100%; width: 100%; z-index: 1; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        /* Hide the routing instructions panel to keep the UI clean */
-        .leaflet-routing-container { display: none; }
     </style>
 </head>
 <body>
@@ -41,41 +36,21 @@
 
         const LoginScreen = ({ onLogin }) => {
             const bgMapRef = useRef(null);
-
             useEffect(() => {
                 if (!bgMapRef.current) {
-                    const map = L.map('login-bg-map', {
-                        zoomControl: false,
-                        attributionControl: false,
-                        dragging: false,
-                        scrollWheelZoom: false,
-                        doubleClickZoom: false
-                    }).setView([12.0, 78.5], 7);
-
+                    const map = L.map('login-bg-map', { zoomControl: false, attributionControl: false }).setView([12.0, 78.5], 7);
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-                    const route = [districts["Chennai"], districts["Coimbatore"]];
-                    L.polyline(route, {
-                        color: '#22d3ee',
-                        weight: 3,
-                        opacity: 0.5,
-                        dashArray: '5, 10'
-                    }).addTo(map);
-
                     bgMapRef.current = map;
                 }
             }, []);
-
             return (
                 <div className="h-screen w-full flex items-center justify-center relative">
                     <div id="login-bg-map" className="absolute inset-0 z-0"></div>
-                    <div className="absolute inset-0 bg-slate-900/60 z-1"></div>
-
-                    <div className="bg-[#051c1c]/90 p-10 rounded-lg shadow-2xl w-96 border border-cyan-900/50 z-10 backdrop-blur-md">
-                        <h2 className="text-center text-white font-bold mb-8 tracking-widest">USER LOGIN</h2>
-                        <input type="text" placeholder="Username" className="w-full p-3 mb-4 rounded-full bg-slate-800 text-white outline-none border border-transparent focus:border-cyan-500" />
-                        <input type="password" placeholder="Password" className="w-full p-3 mb-8 rounded-full bg-slate-800 text-white outline-none border border-transparent focus:border-cyan-500" />
-                        <button onClick={onLogin} className="w-full bg-cyan-500 text-black font-bold py-3 rounded-full hover:bg-cyan-400 transition shadow-[0_0_15px_rgba(6,182,212,0.4)]">LOGIN</button>
+                    <div className="bg-[#051c1c]/90 p-10 rounded-lg shadow-2xl w-96 border border-cyan-900/50 z-10 backdrop-blur-md text-center">
+                        <h2 className="text-white font-bold mb-8 tracking-widest">USER LOGIN</h2>
+                        <input type="text" placeholder="Username" className="w-full p-3 mb-4 rounded-full bg-slate-800 text-white outline-none" />
+                        <input type="password" placeholder="Password" className="w-full p-3 mb-8 rounded-full bg-slate-800 text-white outline-none" />
+                        <button onClick={onLogin} className="w-full bg-cyan-500 text-black font-bold py-3 rounded-full">LOGIN</button>
                     </div>
                 </div>
             );
@@ -84,29 +59,17 @@
         const SearchScreen = ({ onSearch }) => {
             const [from, setFrom] = useState("Coimbatore");
             const [to, setTo] = useState("Chennai");
-
             return (
-                <div className="h-screen w-full flex items-center justify-center bg-slate-800 relative">
-                    <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000')] bg-cover"></div>
-                    <div className="relative glass p-10 rounded-3xl text-center shadow-2xl border border-white/10 w-[400px]">
-                        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">🚌 Real-Time Vehicle Tracking</h1>
-                        <p className="text-gray-300 mb-6 text-sm">Select districts to find your bus</p>
-                        
-                        <div className="text-left mb-4">
-                            <label className="text-xs text-gray-400 ml-4">From District</label>
-                            <select value={from} onChange={(e) => setFrom(e.target.value)} className="w-full p-3 mt-1 rounded-full bg-white text-black appearance-none cursor-pointer">
-                                {Object.keys(districts).map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="text-left mb-6">
-                            <label className="text-xs text-gray-400 ml-4">To District</label>
-                            <select value={to} onChange={(e) => setTo(e.target.value)} className="w-full p-3 mt-1 rounded-full bg-white text-black appearance-none cursor-pointer">
-                                {Object.keys(districts).map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        </div>
-
-                        <button onClick={() => onSearch(from, to)} className="w-full bg-yellow-400 text-black font-bold py-3 rounded-full hover:bg-yellow-500 transition">Track Bus</button>
+                <div className="h-screen w-full flex items-center justify-center bg-slate-900">
+                    <div className="glass p-10 rounded-3xl text-center shadow-2xl border border-white/10 w-[400px]">
+                        <h1 className="text-2xl font-bold mb-6">🚌 Track Your Bus</h1>
+                        <select value={from} onChange={(e) => setFrom(e.target.value)} className="w-full p-3 mb-4 rounded-full bg-white text-black">
+                            {Object.keys(districts).map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                        <select value={to} onChange={(e) => setTo(e.target.value)} className="w-full p-3 mb-6 rounded-full bg-white text-black">
+                            {Object.keys(districts).map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                        <button onClick={() => onSearch(from, to)} className="w-full bg-yellow-400 text-black font-bold py-3 rounded-full">Track Bus</button>
                     </div>
                 </div>
             );
@@ -115,113 +78,115 @@
         const LoadingScreen = () => (
             <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0b0e14]">
                 <div className="text-4xl mb-4 animate-bounce">🚌</div>
-                <h2 className="text-3xl font-black italic tracking-tighter text-white">Loading Route</h2>
-                <div className="w-48 h-1 bg-gray-700 mt-4 overflow-hidden relative rounded-full">
-                    <div className="absolute inset-0 bg-orange-500 animate-[pulse_1.5s_infinite]"></div>
-                </div>
+                <h2 className="text-xl font-bold text-white">Loading Route...</h2>
             </div>
         );
 
+        // --- UPDATED MAP SCREEN TO MATCH IMAGE ---
         const MapScreen = ({ from, to, onBack }) => {
             const mapRef = useRef(null);
 
             useEffect(() => {
                 const timer = setTimeout(() => {
                     if (!mapRef.current) {
-                        const startCoords = districts[from];
-                        const endCoords = districts[to];
+                        const start = districts[from];
+                        const end = districts[to];
+                        const map = L.map('map', { zoomControl: true }).setView(start, 7);
                         
-                        const map = L.map('map').setView(startCoords, 7);
-                        
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                            attribution: '&copy; OpenStreetMap contributors'
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; OpenStreetMap'
                         }).addTo(map);
 
-                        // Real-world road routing
-                        L.Routing.control({
-                            waypoints: [
-                                L.latLng(startCoords[0], startCoords[1]),
-                                L.latLng(endCoords[0], endCoords[1])
-                            ],
-                            lineOptions: {
-                                styles: [{ color: '#f97316', opacity: 0.8, weight: 6 }]
-                            },
-                            createMarker: function(i, wp, nWps) {
-                                if (i === 0) return L.circleMarker(wp.latLng, { color: '#22c55e', radius: 8, fillOpacity: 1 }).bindPopup("Start: " + from);
-                                if (i === nWps - 1) return L.circleMarker(wp.latLng, { color: '#f97316', radius: 8, fillOpacity: 1 }).bindPopup("Destination: " + to);
-                                return null;
-                            },
-                            addWaypoints: false,
-                            draggableWaypoints: false,
-                            fitSelectedRoutes: true,
-                            show: false
+                        // Orange dashed route line as seen in screenshot
+                        const routeLine = L.polyline([start, end], {
+                            color: '#f97316', 
+                            weight: 4,
+                            dashArray: '10, 10',
+                            opacity: 0.8
                         }).addTo(map);
 
-                        // Bus Marker
-                        L.marker(startCoords, {
+                        // Start Marker (Bus Icon)
+                        L.marker(start, {
                             icon: L.divIcon({ html: '🚌', className: 'text-2xl', iconSize: [30, 30] })
                         }).addTo(map);
 
+                        // Destination Marker (Orange Circle)
+                        L.circleMarker(end, {
+                            radius: 10,
+                            fillColor: "#f97316",
+                            color: "#fff",
+                            weight: 2,
+                            fillOpacity: 1
+                        }).addTo(map);
+
+                        map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
                         mapRef.current = map;
                     }
                 }, 100);
-
-                return () => {
-                    clearTimeout(timer);
-                    if (mapRef.current) {
-                        mapRef.current.remove();
-                        mapRef.current = null;
-                    }
-                };
+                return () => { if(mapRef.current) mapRef.current.remove(); };
             }, [from, to]);
 
             return (
-                <div className="h-screen w-full flex overflow-hidden">
-                    <div className="w-1/3 bg-[#111318] border-r border-white/10 flex flex-col p-6 custom-scrollbar overflow-y-auto">
-                        <button onClick={onBack} className="text-gray-400 hover:text-white mb-6 flex items-center gap-2">← Change Route</button>
+                <div className="h-screen w-full flex overflow-hidden bg-[#0b0e14]">
+                    {/* LEFT SIDEBAR - UI MATCHER */}
+                    <div className="w-[350px] bg-[#111318] border-r border-white/10 flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                        <button onClick={onBack} className="text-gray-400 hover:text-white mb-8 flex items-center gap-2 text-sm">
+                           ← Change Route
+                        </button>
                         
-                        <div className="mb-8">
-                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Trip Overview</h2>
-                            <div className="flex items-center gap-4 bg-slate-800/40 p-4 rounded-xl border border-white/5">
-                                <div className="text-green-500 font-bold">{from}</div>
-                                <div className="text-gray-600">→</div>
-                                <div className="text-orange-500 font-bold">{to}</div>
+                        <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Trip Overview</h2>
+                        <div className="bg-[#1a1d24] p-4 rounded-xl mb-8 flex items-center justify-between border border-white/5">
+                            <span className="text-green-500 font-bold">{from}</span>
+                            <span className="text-gray-500">→</span>
+                            <span className="text-orange-500 font-bold">{to}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-8">
+                            <div className="bg-[#1a1d24] p-3 rounded-xl border border-white/5">
+                                <p className="text-[9px] text-gray-500 uppercase">Current Time</p>
+                                <p className="text-sm font-bold text-white">21:20:13</p>
+                            </div>
+                            <div className="bg-[#1a1d24] p-3 rounded-xl border border-white/5">
+                                <p className="text-[9px] text-gray-500 uppercase">Total Distance</p>
+                                <p className="text-sm font-bold text-white">428 km</p>
+                            </div>
+                            <div className="bg-[#1a1d24] p-3 rounded-xl border border-white/5">
+                                <p className="text-[9px] text-gray-500 uppercase">ETA</p>
+                                <p className="text-sm font-bold text-orange-400">75 min 8s</p>
+                            </div>
+                            <div className="bg-[#1a1d24] p-3 rounded-xl border border-white/5">
+                                <p className="text-[9px] text-gray-500 uppercase">Progress</p>
+                                <p className="text-sm font-bold text-green-400">39%</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-400 uppercase">Current Time</p>
-                                <p className="text-lg font-bold">21:20:13</p>
+                        <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Upcoming Stops</h2>
+                        <div className="space-y-6 relative ml-2 border-l border-slate-700 pl-6">
+                            <div className="relative">
+                                <div className="absolute -left-[30px] top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-[#111318]"></div>
+                                <p className="text-xs font-bold text-white">Stop 1 - Intermediate</p>
+                                <p className="text-[10px] text-gray-500 font-medium">Scheduled: 21:45</p>
                             </div>
-                            <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-400 uppercase">Total Distance</p>
-                                <p className="text-lg font-bold">Calculated...</p>
+                            <div className="relative">
+                                <div className="absolute -left-[30px] top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-[#111318]"></div>
+                                <p className="text-xs font-bold text-white">Stop 2 - Plaza</p>
+                                <p className="text-[10px] text-gray-500 font-medium">Scheduled: 22:15</p>
                             </div>
-                            <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-400 uppercase">ETA</p>
-                                <p className="text-lg font-bold text-orange-400">Live</p>
-                            </div>
-                            <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
-                                <p className="text-[10px] text-gray-400 uppercase">Progress</p>
-                                <p className="text-lg font-bold text-green-400">39%</p>
-                            </div>
-                        </div>
-
-                        <div className="flex-1">
-                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Upcoming Stops</h2>
-                            <div className="space-y-4 relative ml-2 border-l border-slate-700 pl-6">
-                                <div className="relative"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-blue-500 rounded-full"></div><p className="text-sm font-bold">Stop 1 - Intermediate</p><p className="text-xs text-gray-500">Scheduled: 21:45</p></div>
-                                <div className="relative"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-blue-500 rounded-full"></div><p className="text-sm font-bold">Stop 2 - Plaza</p><p className="text-xs text-gray-500">Scheduled: 22:15</p></div>
-                                <div className="relative opacity-50"><div className="absolute -left-[29px] top-1 w-3 h-3 bg-gray-500 rounded-full"></div><p className="text-sm font-bold">Final - {to}</p></div>
+                            <div className="relative opacity-40">
+                                <div className="absolute -left-[30px] top-1 w-3 h-3 bg-gray-500 rounded-full ring-4 ring-[#111318]"></div>
+                                <p className="text-xs font-bold text-white">Final - {to}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="w-2/3 relative">
+                    {/* RIGHT MAP AREA */}
+                    <div className="flex-1 relative">
                         <div id="map"></div>
-                        <div className="absolute top-4 right-4 z-[1000] flex gap-2">
-                            <span className="bg-red-600 px-3 py-1 rounded text-[10px] font-bold animate-pulse">● LIVE TRACKING</span>
+                        <div className="absolute top-4 right-4 z-[1000]">
+                            <span className="bg-red-500/20 text-red-500 border border-red-500/50 px-3 py-1 rounded-sm text-[10px] font-bold flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                                LIVE TRACKING
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -231,23 +196,19 @@
         function App() {
             const [view, setView] = useState('login');
             const [route, setRoute] = useState({ from: '', to: '' });
-
-            const handleLogin = () => setView('search');
-            const handleSearch = (from, to) => {
-                setRoute({ from, to });
+            const handleSearch = (f, t) => {
+                setRoute({ from: f, to: t });
                 setView('loading');
-                setTimeout(() => setView('map'), 1500);
+                setTimeout(() => setView('map'), 1000);
             };
-
             switch(view) {
-                case 'login': return <LoginScreen onLogin={handleLogin} />;
+                case 'login': return <LoginScreen onLogin={() => setView('search')} />;
                 case 'search': return <SearchScreen onSearch={handleSearch} />;
                 case 'loading': return <LoadingScreen />;
                 case 'map': return <MapScreen from={route.from} to={route.to} onBack={() => setView('search')} />;
                 default: return <LoginScreen />;
             }
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
